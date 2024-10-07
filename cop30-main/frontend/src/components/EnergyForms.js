@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import { db, auth } from '../firebase/firebase'; // Certifique-se de apontar corretamente para sua configuração Firebase
+import { collection, addDoc } from 'firebase/firestore';
 
 const EnergyForms = ({ addDevice }) => {
   const [dispositivo, setDispositivo] = useState('');
@@ -10,6 +11,24 @@ const EnergyForms = ({ addDevice }) => {
   const [errorMessage, setErrorMessage] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [isFocused, setIsFocused] = useState(false);
+
+  const saveFormData = async (newDevice) => {
+    const user = auth.currentUser;  // Pega o usuário autenticado
+    if (user) {
+      const uid = user.uid;
+      try {
+        const docRef = await addDoc(collection(db, 'users', uid, 'devices'), newDevice);  // Salva no Firestore
+        console.log('Dados do dispositivo salvos com sucesso no Firestore', docRef.id);
+        return docRef;  // Retorna a referência do documento salvo
+      } catch (error) {
+        console.error('Erro ao salvar os dados no Firestore:', error);
+        return null;  // Retorna null em caso de erro
+      }
+    } else {
+      console.error('Usuário não autenticado. Não foi possível salvar os dados.');
+      return null;  // Retorna null se o usuário não estiver autenticado
+    }
+  };
 
   const handleBlur = () => {
     setTimeout(() => {
@@ -66,16 +85,13 @@ const EnergyForms = ({ addDevice }) => {
     { nome: 'Playstation 5', potencia: 200 },
     { nome: 'Xbox Series X', potencia: 180 },
   ];
-  
-
   const handleInputChange = (e) => {
     const value = e.target.value;
     setDispositivo(value);
 
-    // Filtrar dispositivos sugeridos conforme o que está sendo digitado
     if (value.length > 0) {
       const filteredSuggestions = allDevices.filter((device) =>
-        device.nome.toLowerCase().startsWith(value.toLowerCase()) // Agora filtra só os que começam com a string digitada
+        device.nome.toLowerCase().startsWith(value.toLowerCase())
       );
       setSuggestions(filteredSuggestions);
     } else {
@@ -85,18 +101,18 @@ const EnergyForms = ({ addDevice }) => {
 
   const handleSuggestionClick = (suggestion) => {
     setDispositivo(suggestion.nome);
-    setPotencia(suggestion.potencia); 
+    setPotencia(suggestion.potencia);
     setSuggestions([]);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-
+  
     if (!dispositivo || !tempoUso || !potencia || !quantidade) {
       setErrorMessage('Por favor, preencha todos os campos antes de submeter o formulário.');
       return;
     }
-
+  
     const newDevice = {
       dispositivo,
       tempo_uso: tempoUso,
@@ -104,99 +120,106 @@ const EnergyForms = ({ addDevice }) => {
       potencia,
       quantidade,
     };
-
-    addDevice(newDevice);
-
-    // Enviar os dados para o backend
-    axios.post('http://localhost:8000/api/devices/', newDevice)
-      .then((response) => {
-        console.log('Device added:', response.data);
-        addDevice(response.data); // Adiciona o dispositivo à tabela no frontend
-      })
-      .catch((error) => {
-        console.error('Error adding device:', error);
-      });
-
-    // Limpar os campos após a submissão
-    setDispositivo('');
-    setTempoUso('');
-    setUnidadeTempo('horas');
-    setPotencia('');
-    setQuantidade('');
-    setErrorMessage('');
-};
+  
+    try {
+      // Salvar os dados no Firestore e obter a referência do documento
+      const docRef = await saveFormData(newDevice);
+  
+      if (docRef) {
+        const deviceId = docRef.id;  // Obtenha o ID do documento salvo
+        // Adicionar o dispositivo ao estado local com o ID do Firestore
+        addDevice({ ...newDevice, id: deviceId });
+  
+        // Limpar os campos após a submissão
+        setDispositivo('');
+        setTempoUso('');
+        setUnidadeTempo('horas');
+        setPotencia('');
+        setQuantidade('');
+        setErrorMessage('');
+      } else {
+        console.error('Erro ao salvar o dispositivo: docRef é null');
+      }
+    } catch (error) {
+      console.error("Erro ao salvar o dispositivo:", error);
+    }
+  };
+  
 
   return (
-    <form onSubmit={handleSubmit} className="form-container">
-      <div className="form-group">
-        <label htmlFor="dispositivo">Dispositivo:</label>
-        <input
-          type="text"
-          id="dispositivo"
-          value={dispositivo}
-          onChange={handleInputChange}
-          onBlur={handleBlur}
-          onFocus={() => setIsFocused(true)}
-          placeholder="Digite o nome do dispositivo"
-        />
-        {/* Mostrar sugestões filtradas */}
-        {isFocused && suggestions.length > 0 && (
-          <ul className="suggestions-list">
-            {suggestions.map((suggestion, index) => (
-              <li key={index} onClick={() => handleSuggestionClick(suggestion)}>
-                {suggestion.nome}
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+    <div>
+      <form onSubmit={handleSubmit} className="form-container">
+        <div className="form-group">
+          <label htmlFor="dispositivo">Dispositivo:</label>
+          <input
+            type="text"
+            id="dispositivo"
+            value={dispositivo}
+            onChange={handleInputChange}
+            onBlur={handleBlur}
+            onFocus={() => setIsFocused(true)}
+            placeholder="Digite o nome do dispositivo"
+          />
+          {isFocused && suggestions.length > 0 && (
+            <ul className="suggestions-list">
+              {suggestions.map((suggestion, index) => (
+                <li key={index} onClick={() => handleSuggestionClick(suggestion)}>
+                  {suggestion.nome}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
 
-      <div className="form-group">
-        <label htmlFor="tempoUso">Tempo de uso:</label>
-        <div className="tempo-uso">
+        <div className="form-group">
+          <label htmlFor="tempoUso">Tempo de uso:</label>
+          <div className="tempo-uso">
+            <input
+              type="number"
+              id="tempoUso"
+              value={tempoUso}
+              onChange={(e) => setTempoUso(e.target.value)}
+              placeholder="Digite a quantidade"
+            />
+            <select
+              value={unidadeTempo}
+              onChange={(e) => setUnidadeTempo(e.target.value)}
+            >
+              <option value="horas">horas/dia</option>
+              <option value="minutos">min/dia</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="potencia">Potência (W/h):</label>
           <input
             type="number"
-            id="tempoUso"
-            value={tempoUso}
-            onChange={(e) => setTempoUso(e.target.value)}
-            placeholder="Digite a quantidade"
+            id="potencia"
+            value={potencia}
+            onChange={(e) => setPotencia(e.target.value)}
+            placeholder="W/h"
           />
-          <select
-            value={unidadeTempo}
-            onChange={(e) => setUnidadeTempo(e.target.value)}
-          >
-            <option value="horas">horas/dia</option>
-            <option value="minutos">min/dia</option>
-          </select>
         </div>
-      </div>
 
-      <div className="form-group">
-        <label htmlFor="potencia">Potência (W/h):</label>
-        <input
-          type="number"
-          id="potencia"
-          value={potencia}
-          onChange={(e) => setPotencia(e.target.value)}
-          placeholder="W/h"
-        />
-      </div>
+        <div className="form-group">
+          <label htmlFor="quantidade">Quantidade:</label>
+          <input
+            type="number"
+            id="quantidade"
+            value={quantidade}
+            onChange={(e) => setQuantidade(e.target.value)}
+            placeholder="Quantidade"
+          />
+        </div>
 
-      <div className="form-group">
-        <label htmlFor="quantidade">Quantidade:</label>
-        <input
-          type="number"
-          id="quantidade"
-          value={quantidade}
-          onChange={(e) => setQuantidade(e.target.value)}
-          placeholder="Quantidade"
-        />
-      </div>
+        {errorMessage && <p style={{ color: 'red' }}>{errorMessage}</p>}
 
-      {errorMessage && <p style={{ color: 'red' }}>{errorMessage}</p>}
+        <button type="submit">Adicionar</button>
+      </form>
 
-      <button type="submit">Adicionar</button>
-    </form>
+     
+    </div>
   );
 };
 

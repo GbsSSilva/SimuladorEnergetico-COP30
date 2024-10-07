@@ -48,3 +48,26 @@ export const Strong = styled.strong`
     color: #676767;
   }
 `;
+
+export const GoogleButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: white;
+  color: #333;
+  border: 1px solid #ddd;
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+  margin-top: 10px;
+  border-radius: 5px;
+  transition: background-color 0.3s;
+
+  &:hover {
+    background-color: #f1f1f1;
+  }
+
+  span {
+    margin-left: 10px;
+  }
+`;

@@ -1,7 +1,42 @@
 import React from 'react';
+import { doc, deleteDoc } from 'firebase/firestore';  // Importa a função para deletar do Firestore
+import { db, auth } from '../firebase/firebase';      // Certifique-se de importar a instância do Firestore e a autenticação
 
 const DeviceTable = ({ devices, setDevices }) => {
   const diasNoMes = 30; // Considerando 30 dias no mês
+
+  // Função para remover um dispositivo do Firestore
+  const removeDeviceFromFirestore = async (deviceId) => {
+    const user = auth.currentUser;  // Pega o usuário autenticado
+    if (user && deviceId) {  // Verifica se o usuário está autenticado e o deviceId está presente
+      const uid = user.uid;
+      try {
+        const deviceRef = doc(db, 'users', uid, 'devices', deviceId);  // Caminho do documento no Firestore
+        await deleteDoc(deviceRef);  // Deletar o documento do Firestore
+        console.log('Dispositivo removido do Firestore com sucesso');
+      } catch (error) {
+        console.error('Erro ao remover o dispositivo do Firestore:', error);
+      }
+    } else {
+      console.error('Usuário não autenticado ou deviceId indefinido.');
+    }
+  };
+
+  // Função para remover o dispositivo da tabela e do Firestore
+  const handleRemoveDevice = async (index, deviceId) => {
+    if (deviceId) {
+      const user = auth.currentUser;
+      if (user) {
+        try {
+          await removeDeviceFromFirestore(deviceId);  // Primeiro, remova do Firestore
+          const newDevices = devices.filter((_, i) => i !== index);  // Remova da lista local
+          setDevices(newDevices);  // Atualiza o estado com a lista sem o dispositivo removido
+        } catch (error) {
+          console.error('Erro ao remover o dispositivo:', error);
+        }
+      }
+    }
+  };
 
   return (
     <div className="device-table">
@@ -45,10 +80,7 @@ const DeviceTable = ({ devices, setDevices }) => {
                   <td>{device.quantidade}</td>
                   <td>{custo.toFixed(2)}</td>
                   <td>
-                    <button onClick={() => {
-                      const newDevices = devices.filter((_, i) => i !== index);
-                      setDevices(newDevices);
-                    }}>X</button>
+                    <button onClick={() => handleRemoveDevice(index, device.id)}>X</button> {/* Passe o ID correto */}
                   </td>
                 </tr>
               );

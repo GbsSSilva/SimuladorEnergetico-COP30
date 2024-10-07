@@ -14,8 +14,8 @@ const Signup = () => {
 
   const { signup } = useAuth();
 
-  const handleSignup = () => {
-    if (!email | !emailConf | !senha) {
+  const handleSignup = async () => {
+    if (!email || !emailConf || !senha) {
       setError("Preencha todos os campos");
       return;
     } else if (email !== emailConf) {
@@ -23,15 +23,15 @@ const Signup = () => {
       return;
     }
 
-    const res = signup(email, senha);
+    const res = await signup(email, senha);
 
     if (res) {
       setError(res);
       return;
     }
 
-    alert("Usuário cadatrado com sucesso!");
-    navigate("/");
+    alert("Usuário cadastrado com sucesso!");
+    navigate("/home");  
   };
 
   return (
@@ -61,7 +61,7 @@ const Signup = () => {
         <C.LabelSignin>
           Já tem uma conta?
           <C.Strong>
-            <Link to="/">&nbsp;Entre</Link>
+            <Link to="/signin">&nbsp;Entre</Link>
           </C.Strong>
         </C.LabelSignin>
       </C.Content>
