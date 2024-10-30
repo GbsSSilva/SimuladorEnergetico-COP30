@@ -1,6 +1,6 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import './AnalysisButton.css';  
+import { useNavigate } from 'react-router-dom';  
+import './AnalysisButton.css'; 
 
 const AnalysisButton = () => {
   const navigate = useNavigate();

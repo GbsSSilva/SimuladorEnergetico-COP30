@@ -69,7 +69,7 @@ const Signin = () => {
         
         {/* Botão de login com Google com ícone */}
         <C.GoogleButton onClick={handleGoogleLogin}>
-          <FcGoogle size={24} /> {/* Tamanho do ícone */}
+          <FcGoogle size={24} /> 
           <span>Entrar com Google</span>
         </C.GoogleButton>
         

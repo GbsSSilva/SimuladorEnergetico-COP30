@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { db, auth } from '../firebase/firebase'; // Certifique-se de apontar corretamente para sua configuração Firebase
+import { db, auth } from '../firebase/firebase';
 import { collection, addDoc } from 'firebase/firestore';
 
 const EnergyForms = ({ addDevice }) => {
@@ -12,30 +12,7 @@ const EnergyForms = ({ addDevice }) => {
   const [suggestions, setSuggestions] = useState([]);
   const [isFocused, setIsFocused] = useState(false);
 
-  const saveFormData = async (newDevice) => {
-    const user = auth.currentUser;  // Pega o usuário autenticado
-    if (user) {
-      const uid = user.uid;
-      try {
-        const docRef = await addDoc(collection(db, 'users', uid, 'devices'), newDevice);  // Salva no Firestore
-        console.log('Dados do dispositivo salvos com sucesso no Firestore', docRef.id);
-        return docRef;  // Retorna a referência do documento salvo
-      } catch (error) {
-        console.error('Erro ao salvar os dados no Firestore:', error);
-        return null;  // Retorna null em caso de erro
-      }
-    } else {
-      console.error('Usuário não autenticado. Não foi possível salvar os dados.');
-      return null;  // Retorna null se o usuário não estiver autenticado
-    }
-  };
-
-  const handleBlur = () => {
-    setTimeout(() => {
-      setSuggestions([]);
-    }, 100); // Timeout para permitir a seleção com clique
-  };
-
+  // Lista de dispositivos sugeridos com respectivas potências
   // Lista de dispositivos sugeridos com respectivas potências
   const allDevices = [
     { nome: 'TV LCD 32', potencia: 150 },
@@ -85,6 +62,7 @@ const EnergyForms = ({ addDevice }) => {
     { nome: 'Playstation 5', potencia: 200 },
     { nome: 'Xbox Series X', potencia: 180 },
   ];
+
   const handleInputChange = (e) => {
     const value = e.target.value;
     setDispositivo(value);
@@ -105,14 +83,20 @@ const EnergyForms = ({ addDevice }) => {
     setSuggestions([]);
   };
 
+  const handleBlur = () => {
+    setTimeout(() => {
+      setSuggestions([]);
+    }, 100);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-  
+
     if (!dispositivo || !tempoUso || !potencia || !quantidade) {
       setErrorMessage('Por favor, preencha todos os campos antes de submeter o formulário.');
       return;
     }
-  
+
     const newDevice = {
       dispositivo,
       tempo_uso: tempoUso,
@@ -120,16 +104,15 @@ const EnergyForms = ({ addDevice }) => {
       potencia,
       quantidade,
     };
-  
-    try {
-      // Salvar os dados no Firestore e obter a referência do documento
-      const docRef = await saveFormData(newDevice);
-  
-      if (docRef) {
-        const deviceId = docRef.id;  // Obtenha o ID do documento salvo
-        // Adicionar o dispositivo ao estado local com o ID do Firestore
-        addDevice({ ...newDevice, id: deviceId });
-  
+
+    const user = auth.currentUser;
+    if (user) {
+      const uid = user.uid;
+      try {
+        const docRef = await addDoc(collection(db, 'users', uid, 'devices'), newDevice);
+        console.log('Dados do dispositivo salvos com sucesso no Firestore', docRef.id);
+        addDevice({ ...newDevice, id: docRef.id });
+
         // Limpar os campos após a submissão
         setDispositivo('');
         setTempoUso('');
@@ -137,14 +120,13 @@ const EnergyForms = ({ addDevice }) => {
         setPotencia('');
         setQuantidade('');
         setErrorMessage('');
-      } else {
-        console.error('Erro ao salvar o dispositivo: docRef é null');
+      } catch (error) {
+        console.error('Erro ao salvar o dispositivo no Firestore:', error);
       }
-    } catch (error) {
-      console.error("Erro ao salvar o dispositivo:", error);
+    } else {
+      console.error('Usuário não autenticado.');
     }
   };
-  
 
   return (
     <div>
@@ -217,8 +199,6 @@ const EnergyForms = ({ addDevice }) => {
 
         <button type="submit">Adicionar</button>
       </form>
-
-     
     </div>
   );
 };

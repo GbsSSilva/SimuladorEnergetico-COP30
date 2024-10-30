@@ -11,7 +11,7 @@ import EnergyQuestionnaire from '../pages/Questions/EnergyQuestionnaire';
 const Private = ({ Item }) => {
   const { signed } = useAuth();  // O hook de autenticação deve retornar o estado correto (true ou false)
 
-  return signed ? <Item /> : <Signin />;  // Verificação booleana
+  return signed ? <Item /> : <Signin />;  
 };
 
 const RoutesApp = () => {

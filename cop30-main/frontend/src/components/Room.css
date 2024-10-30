@@ -1,0 +1,31 @@
+.room {
+    padding: 15px;
+    background-color: #f4f4f9;
+    border: 2px dashed #2a9d8f;
+    border-radius: 8px;
+    margin: 10px;
+    min-height: 150px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: background-color 0.2s ease;
+  }
+  
+  .room-hover {
+    background-color: #e0f7f4;
+  }
+  
+  .room-device {
+    background-color: #264653;
+    color: #fff;
+    padding: 8px;
+    border-radius: 5px;
+    margin: 5px 0;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+  }
+  
+  .room-device:hover {
+    transform: scale(1.05);
+  }
+  

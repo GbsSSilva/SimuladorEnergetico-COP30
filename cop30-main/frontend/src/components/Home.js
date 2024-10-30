@@ -10,22 +10,21 @@ const Home = () => {
 
   // Função para buscar os dispositivos do Firestore quando a página carregar
   const fetchUserData = async () => {
-    const user = auth.currentUser;  
+    const user = auth.currentUser;
     if (user) {
       const uid = user.uid;
       try {
         const querySnapshot = await getDocs(collection(db, 'users', uid, 'devices'));
         const devicesData = [];
         querySnapshot.forEach((doc) => {
-          devicesData.push({ id: doc.id, ...doc.data() });  // Inclui o ID do documento
+          devicesData.push({ id: doc.id, ...doc.data() });
         });
-        setDevices(devicesData);  // Atualiza o estado com os dados recuperados
+        setDevices(devicesData);
       } catch (error) {
         console.error('Erro ao buscar os dados do Firestore:', error);
       }
     }
   };
-  
 
   // Resgatar dados ao montar o componente
   useEffect(() => {
@@ -37,39 +36,29 @@ const Home = () => {
     setDevices((prevDevices) => [...prevDevices, newDevice]);
   };
 
+  // Função para calcular o custo total
   const calcularCustoTotal = () => {
     const diasNoMes = 30;
-
     return devices.reduce((total, device) => {
-      let horasUso;
-
-      if (device.unidade_tempo === 'minutos') {
-        horasUso = device.tempo_uso / 60;
-      } else {
-        horasUso = device.tempo_uso;
-      }
-
+      const horasUso = device.unidade_tempo === 'minutos' ? device.tempo_uso / 60 : device.tempo_uso;
       const consumoKwhDiario = (device.potencia * horasUso * device.quantidade) / 1000;
       const consumoMensalKwh = consumoKwhDiario * diasNoMes;
       const custo = consumoMensalKwh * 0.93845;
-
       return total + (custo >= 0 ? custo : 0);
     }, 0).toFixed(2);
   };
 
   return (
-    <div id='content'>
+    <div id="content">
       <section id="home">
         <div className="shape"></div>
         <div id="cta">
           <h1 className="title">
-            Economize energia, 
-            <span> cuide do futuro.</span>
+            Economize energia, <span>cuide do futuro.</span>
           </h1>
           <p className="description">
             Aqui você aprende como economizar energia elétrica de forma simples e prática. Preencha o formulário ao lado e descubra seu gasto de energia doméstico.
           </p>
-
           <div id="cta_buttons">
             <a href="https://www.gov.br/planalto/pt-br/agenda-internacional/missoes-internacionais/cop28/cop-30-no-brasil" id="phone_button">
               <button className="btn-default">
@@ -77,7 +66,6 @@ const Home = () => {
               </button>
               Acesse COP 30
             </a>
-
             <a href="https://www.unama.br/institucional/nacional" id="phone_button">
               <button className="btn-default">
                 <i className="fa-solid fa-phone"></i>
@@ -89,8 +77,7 @@ const Home = () => {
 
         <div id="Formulario">
           <div className="forms-container">
-            <EnergyForms addDevice={addDevice} />
-
+              <EnergyForms addDevice={addDevice} />
             <div className="footer-content">
               <DeviceTable devices={devices} setDevices={setDevices} />
               <h2>Custo total em Reais no mês:</h2>
